@@ -18,6 +18,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
+	"github.com/wundergraph/cosmo/router/internal/compression"
 	"github.com/wundergraph/cosmo/router/internal/recoveryhandler"
 	"github.com/wundergraph/cosmo/router/internal/requestlogger"
 	"github.com/wundergraph/cosmo/router/pkg/config"
@@ -538,7 +539,6 @@ func (r *Router) UpdateServer(ctx context.Context, cfg *nodev1.RouterConfig) (Se
 }
 
 func (r *Router) updateServerAndStart(ctx context.Context, cfg *nodev1.RouterConfig) error {
-
 	if _, err := r.UpdateServer(ctx, cfg); err != nil {
 		return err
 	}
@@ -927,6 +927,7 @@ func (r *Router) newServer(ctx context.Context, routerConfig *nodev1.RouterConfi
 	httpRouter.Use(recoveryHandler)
 	httpRouter.Use(middleware.RequestID)
 	httpRouter.Use(middleware.RealIP)
+	httpRouter.Use(compression.NewMiddleware())
 	// Register the trace middleware before the request logger, so we can log the trace ID
 	if traceHandler != nil {
 		httpRouter.Use(traceHandler.Handler)
@@ -1239,7 +1240,6 @@ func (r *server) listenAndServe() error {
 // Shutdown gracefully shuts down the router. It blocks until the server is shutdown.
 // If the router is already shutdown, the method returns immediately without error. Not safe for concurrent use.
 func (r *Router) Shutdown(ctx context.Context) (err error) {
-
 	if r.shutdown {
 		return nil
 	}
